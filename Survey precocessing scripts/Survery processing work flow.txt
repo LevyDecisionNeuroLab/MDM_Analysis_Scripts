@@ -1,0 +1,7 @@
+download and clean the sheet
+a few question ID is mismatched compared with the scoring guide, it is corrected by the addition row "Qid"
+run the MDM_surveys.m to preprocess
+
+
+* starting from 2/27/2017 DOSPERT-EB is added to the survey
+* Checked one subject, and the averaging value seem to be calculated correctly
