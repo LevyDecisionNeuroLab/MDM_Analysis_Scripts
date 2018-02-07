@@ -3,17 +3,17 @@ clearvars
 close all
 
 %% Define conditions
-fitparwave = 'Behavior data fitpar_0124012018';
+fitparwave = 'Behavior data fitpar_01262018';
 fitbywhat = 'value';
 includeAmbig = true;
 
 %% Setup
-root = 'D:\Ruonan\Projects in the lab\MDM Project\Medical Decision Making Imaging\MDM_imaging\Behavioral Analysis';
-function_path = fullfile(root,'MDM_Analysis_Scripts','Model fitting script_10.2.16');
+root = 'C:\Users\aaa224\Documents\Austin\MDM Study\Analysis';
+function_path = fullfile(root,'Analysis Scripts\MDM_Analysis_Scripts','Model fitting script');
 addpath(function_path)
 data_path = fullfile(root, 'PTB Behavior Log/'); % Original log from PTB
 subjects = getSubjectsInDir(data_path, 'subj'); %function
-exclude = [2581]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
+exclude = [2719]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
 subjects = subjects(~ismember(subjects, exclude));
 % subjects = [2585];
 

@@ -8,14 +8,14 @@ clearvars
 close all
 
 %% Define conditions
-fitparwave = 'Behavior data fitpar_0126012018'; % folder to save all the fitpar data structures
-fitbywhat = 'rating'; % what to use as values 'value', 'rating', 'arbitrary'(0,1,2,3,4)
+fitparwave = 'Behavior data fitpar_01262018'; % folder to save all the fitpar data structures
+fitbywhat = 'value'; % what to use as values 'value', 'rating', 'arbitrary'(0,1,2,3,4)
 model = 'ambigNrisk'; % which utility function
 includeAmbig = true;
-search = 'grid';
+search = 'single';
 
 %% Set up loading & subject selection
-root = 'D:\Ruonan\Projects in the lab\MDM Project\Medical Decision Making Imaging\MDM_imaging\Behavioral Analysis';
+root = 'C:\Users\aaa224\Documents\Austin\MDM Study\Analysis';
 data_path = fullfile(root, 'PTB Behavior Log/'); % root of folders is sufficient
 rating_filename = fullfile(root, 'Behavior Analysis/MDM_Rating.csv');
 fitpar_out_path = fullfile(root, 'Behavior fitpar files',fitparwave);
@@ -29,7 +29,7 @@ addpath(genpath(data_path)); % generate path for all the subject data folder
 
 % get all subjects number in the folder
 subjects = getSubjectsInDir(data_path, 'subj');
-exclude = [2581]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
+exclude = [2719]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
 subjects = subjects(~ismember(subjects, exclude));
 % subjects = [2585];
 
