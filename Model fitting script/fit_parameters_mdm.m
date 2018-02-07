@@ -9,7 +9,7 @@ close all
 
 %% Define conditions
 fitparwave = 'Behavior data fitpar_0126012018'; % folder to save all the fitpar data structures
-fitbywhat = 'rating'; % what to use as values 'value', 'rating', 'arbitrary'(1,2,3,4,5)
+fitbywhat = 'rating'; % what to use as values 'value', 'rating', 'arbitrary'(0,1,2,3,4)
 model = 'ambigNrisk'; % which utility function
 includeAmbig = true;
 search = 'grid';
