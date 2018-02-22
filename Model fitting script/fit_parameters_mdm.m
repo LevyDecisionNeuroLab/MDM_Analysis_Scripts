@@ -8,7 +8,7 @@ clearvars
 close all
 
 %% Define conditions
-fitparwave = 'Behavior data fitpar_01262018'; % folder to save all the fitpar data structures
+fitparwave = 'Behavior data fitpar_02222018'; % folder to save all the fitpar data structures
 fitbywhat = 'value'; % what to use as values 'value', 'rating', 'arbitrary'(0,1,2,3,4)
 model = 'ambigNrisk'; % which utility function
 includeAmbig = true;

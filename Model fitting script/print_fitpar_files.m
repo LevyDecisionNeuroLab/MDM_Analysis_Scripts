@@ -3,7 +3,7 @@ clearvars
 close all
 
 %% Define conditions
-fitparwave = 'Behavior data fitpar_01262018';
+fitparwave = 'Behavior data fitpar_02222018';
 fitbywhat = 'value';
 includeAmbig = true;
 
