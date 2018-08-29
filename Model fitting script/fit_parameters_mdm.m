@@ -8,9 +8,9 @@ clearvars
 close all
 
 %% Define conditions
-fitparwave = 'Behavior data fitpar_0126012018'; % folder to save all the fitpar data structures
-fitbywhat = 'rating'; % what to use as values 'value', 'rating', 'arbitrary'(0,1,2,3,4)
-model = 'ambigNrisk'; % which utility function
+fitparwave = 'Behavior data fitpar_0523012018'; % folder to save all the fitpar data structures
+fitbywhat = 'arbitrary'; % what to use as values 'value', 'rating', 'arbitrary'(0,1,2,3,4)
+model = 'riskAmbigPremiumVar'; % which utility function
 includeAmbig = true;
 search = 'grid';
 
@@ -31,7 +31,8 @@ addpath(genpath(data_path)); % generate path for all the subject data folder
 subjects = getSubjectsInDir(data_path, 'subj');
 exclude = [2581]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
 subjects = subjects(~ismember(subjects, exclude));
-% subjects = [2585];
+% subjects = [2654 2655 2656 2657 2658 2659 2660 2661 2662 2663 2664 2665 2666];
+% subjects = [2663 2664 2665 2666];
 
 % load subjective ratings
 % column1-subj ID, c2-$0, c3-$5,c4-$8,c5-$12,c6-$25,c7-no effect, c8-slight,c9-moderate,c10-major,c11-recovery.

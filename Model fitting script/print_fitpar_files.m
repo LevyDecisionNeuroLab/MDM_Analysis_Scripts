@@ -3,19 +3,20 @@ clearvars
 close all
 
 %% Define conditions
-fitparwave = 'Behavior data fitpar_0124012018';
-fitbywhat = 'value';
+fitparwave = 'Behavior data fitpar_0523012018';
+fitbywhat = 'arbitrary';
 includeAmbig = true;
 
 %% Setup
 root = 'D:\Ruonan\Projects in the lab\MDM Project\Medical Decision Making Imaging\MDM_imaging\Behavioral Analysis';
-function_path = fullfile(root,'MDM_Analysis_Scripts','Model fitting script_10.2.16');
+function_path = fullfile(root,'MDM_Analysis_Scripts','Model fitting script');
 addpath(function_path)
 data_path = fullfile(root, 'PTB Behavior Log/'); % Original log from PTB
 subjects = getSubjectsInDir(data_path, 'subj'); %function
 exclude = [2581]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
 subjects = subjects(~ismember(subjects, exclude));
 % subjects = [2585];
+% subjects = [2654 2655 2656 2657 2658 2659 2660 2661 2662 2663 2664 2665 2666];
 
 path = fullfile(root, 'Behavior fitpar files', fitparwave,filesep);
 cd(path);
@@ -180,15 +181,15 @@ for s = 1:length(subjects)
     
     %% for Excel file - choice prob by lottery type
     
-%     % Firt, combine choice data with and without $4
-%     choices_allP = [riskyChoicesP; ambigChoicesP];
-%     choices_allN = [riskyChoicesN; ambigChoicesN];
-%     
-%     all_data_subject = [valueP; choices_allP ;valueP; choices_allN];
-%     
-%     xlFile = ['choice_data.xls'];
-%     dlmwrite(xlFile, subject , '-append', 'roffset', 1, 'delimiter', ' ');  
-%     dlmwrite(xlFile, all_data_subject, 'coffset', 1, '-append', 'delimiter', '\t');
+    % Firt, combine choice data with and without $4
+    choices_allP = [riskyChoicesP; ambigChoicesP];
+    choices_allN = [riskyChoicesN; ambigChoicesN];
+    
+    all_data_subject = [valueP; choices_allP ;valueP; choices_allN];
+    
+    xlFile = ['choice_data.xls'];
+    dlmwrite(xlFile, subject , '-append', 'roffset', 1, 'delimiter', ' ');  
+    dlmwrite(xlFile, all_data_subject, 'coffset', 1, '-append', 'delimiter', '\t');
     
     %% for Excel file - subjective values
 %     xlFile = ['SV_unconstrained_by_lottery.xls'];
@@ -198,74 +199,74 @@ for s = 1:length(subjects)
     
     %% for Excel file - choice prob by uncertainty level
     
-%     %exclude choices with $5 or slight improvement
-%     %P is monetary, N is medical
-%     riskyChoicesP = riskyChoicesP(:,2:size(riskyChoicesP,2));
-%     riskyChoicesPC = riskyChoicesPC(:,2:size(riskyChoicesPC,2));
-%     ambigChoicesP = ambigChoicesP(:,2:size(ambigChoicesP,2));
-%     ambigChoicesPC = ambigChoicesPC(:,2:size(ambigChoicesPC,2));
-%     riskyChoicesN = riskyChoicesN(:,2:size(riskyChoicesN,2));
-%     riskyChoicesNC = riskyChoicesNC(:,2:size(riskyChoicesNC,2));
-%     ambigChoicesN = ambigChoicesN(:,2:size(ambigChoicesN,2));
-%     ambigChoicesNC = ambigChoicesNC(:,2:size(ambigChoicesNC,2));
-% 
-%     % monetary
-%     riskyChoicesPT = riskyChoicesP .* riskyChoicesPC; % choice total counts = choice prob * trial counts
-%     cpByRiskP = zeros(size(riskyChoicesP,1),1); % choice prob by risk level
-%     for i = 1:size(cpByRiskP,1);
-%       cpByRiskP(i) = sum(riskyChoicesPT(i,:))/sum(riskyChoicesPC(i,:));
-%     end
-%     cpRiskAllP = sum(riskyChoicesPT(:))/sum(riskyChoicesPC(:));
-%     
-%     ambigChoicesPT = ambigChoicesP .* ambigChoicesPC; % choice total counts = choice prob * tial counts
-%     cpByAmbigP = zeros(size(ambigChoicesP,1),1); % choice prob by ambig level
-%     for i = 1:size(cpByAmbigP,1);
-%       cpByAmbigP(i) = sum(ambigChoicesPT(i,:))/sum(ambigChoicesPC(i,:));
-%     end
-%     cpAmbigAllP = sum(ambigChoicesPT(:))/sum(ambigChoicesPC(:));
-%     
-%     ambigAttP = ambigChoicesP - riskyChoicesP(2,:); 
-%     ambigAttByAmbigP = nanmean(ambigAttP.'); % model free ambig attitude by ambig level
-%     ambigAttAllP = nanmean(ambigAttP(:));
-%     
-%     AllPT = sum(riskyChoicesPT(:)) + sum(ambigChoicesPT(:)); % choice total counts = choice prob * tial counts
-%     AllPC = sum(riskyChoicesPC(:)) + sum(ambigChoicesPC(:));
-%     cpAllP = sum(AllPT(:))/AllPC;
-% 
-%    
-%     
-%     %Medical
-%     riskyChoicesNT = riskyChoicesN .* riskyChoicesNC; % choice total counts = choice prob * tial counts
-%     cpByRiskN = zeros(size(riskyChoicesN,1),1); % choice prob by risk level
-%     for i = 1:size(cpByRiskN,1);
-%       cpByRiskN(i) = sum(riskyChoicesNT(i,:))/sum(riskyChoicesNC(i,:));
-%     end
-%     cpRiskAllN = sum(riskyChoicesNT(:))/sum(riskyChoicesNC(:));
-%     
-%     ambigChoicesNT = ambigChoicesN .* ambigChoicesNC; % choice total counts = choice prob * tial counts
-%     cpByAmbigN = zeros(size(ambigChoicesN,1),1); % choice prob by ambig level
-%     for i = 1:size(cpByAmbigN,1);
-%       cpByAmbigN(i) = sum(ambigChoicesNT(i,:))/sum(ambigChoicesNC(i,:));
-%     end
-%     cpAmbigAllN = sum(ambigChoicesNT(:))/sum(ambigChoicesNC(:));
-%     
-%     ambigAttN = ambigChoicesN - riskyChoicesN(2,:); 
-%     ambigAttByAmbigN = nanmean(ambigAttN.'); % model free ambig attitude by ambig lavel
-%     ambigAttAllN = nanmean(ambigAttN(:));
-%     
-%     AllNT = sum(riskyChoicesNT(:)) + sum(ambigChoicesNT(:)); % choice total counts = choice prob * tial counts
-%     AllNC = sum(riskyChoicesNC(:)) + sum(ambigChoicesNC(:));
-%     cpAllN = sum(AllNT(:))/AllNC;
-% 
-%     
-% 
-%    cp_title = {'subject ID', 'r25', 'r50','r75','rAll','a24', 'a50','a74','aAll','a24-r50', 'a50-r50','a74-r50','a-r50 All','All',...
-%                              'r25', 'r50','r75','rAll','a24', 'a50','a74','aAll','a24-r50', 'a50-r50','a74-r50','a-r50 All','All'};
-%    cp_data_subject = [subject,cpByRiskP.',cpRiskAllP,cpByAmbigP.',cpAmbigAllP,ambigAttByAmbigP,ambigAttAllP,cpAllP...
-%                               cpByRiskN.',cpRiskAllN,cpByAmbigN.',cpAmbigAllN,ambigAttByAmbigN,ambigAttAllN,cpAllN];
-%                           
-%     xlFile = ['choice_prob_without5.xls'];
-%     dlmwrite(xlFile, cp_data_subject, 'coffset', 1, '-append', 'delimiter', '\t');
+    %exclude choices with $5 or slight improvement
+    %P is monetary, N is medical
+    riskyChoicesP = riskyChoicesP(:,2:size(riskyChoicesP,2));
+    riskyChoicesPC = riskyChoicesPC(:,2:size(riskyChoicesPC,2));
+    ambigChoicesP = ambigChoicesP(:,2:size(ambigChoicesP,2));
+    ambigChoicesPC = ambigChoicesPC(:,2:size(ambigChoicesPC,2));
+    riskyChoicesN = riskyChoicesN(:,2:size(riskyChoicesN,2));
+    riskyChoicesNC = riskyChoicesNC(:,2:size(riskyChoicesNC,2));
+    ambigChoicesN = ambigChoicesN(:,2:size(ambigChoicesN,2));
+    ambigChoicesNC = ambigChoicesNC(:,2:size(ambigChoicesNC,2));
+
+    % monetary
+    riskyChoicesPT = riskyChoicesP .* riskyChoicesPC; % choice total counts = choice prob * trial counts
+    cpByRiskP = zeros(size(riskyChoicesP,1),1); % choice prob by risk level
+    for i = 1:size(cpByRiskP,1);
+      cpByRiskP(i) = sum(riskyChoicesPT(i,:))/sum(riskyChoicesPC(i,:));
+    end
+    cpRiskAllP = sum(riskyChoicesPT(:))/sum(riskyChoicesPC(:));
+    
+    ambigChoicesPT = ambigChoicesP .* ambigChoicesPC; % choice total counts = choice prob * tial counts
+    cpByAmbigP = zeros(size(ambigChoicesP,1),1); % choice prob by ambig level
+    for i = 1:size(cpByAmbigP,1);
+      cpByAmbigP(i) = sum(ambigChoicesPT(i,:))/sum(ambigChoicesPC(i,:));
+    end
+    cpAmbigAllP = sum(ambigChoicesPT(:))/sum(ambigChoicesPC(:));
+    
+    ambigAttP = ambigChoicesP - riskyChoicesP(2,:); 
+    ambigAttByAmbigP = nanmean(ambigAttP.'); % model free ambig attitude by ambig level
+    ambigAttAllP = nanmean(ambigAttP(:));
+    
+    AllPT = sum(riskyChoicesPT(:)) + sum(ambigChoicesPT(:)); % choice total counts = choice prob * tial counts
+    AllPC = sum(riskyChoicesPC(:)) + sum(ambigChoicesPC(:));
+    cpAllP = sum(AllPT(:))/AllPC;
+
+   
+    
+    %Medical
+    riskyChoicesNT = riskyChoicesN .* riskyChoicesNC; % choice total counts = choice prob * tial counts
+    cpByRiskN = zeros(size(riskyChoicesN,1),1); % choice prob by risk level
+    for i = 1:size(cpByRiskN,1);
+      cpByRiskN(i) = sum(riskyChoicesNT(i,:))/sum(riskyChoicesNC(i,:));
+    end
+    cpRiskAllN = sum(riskyChoicesNT(:))/sum(riskyChoicesNC(:));
+    
+    ambigChoicesNT = ambigChoicesN .* ambigChoicesNC; % choice total counts = choice prob * tial counts
+    cpByAmbigN = zeros(size(ambigChoicesN,1),1); % choice prob by ambig level
+    for i = 1:size(cpByAmbigN,1);
+      cpByAmbigN(i) = sum(ambigChoicesNT(i,:))/sum(ambigChoicesNC(i,:));
+    end
+    cpAmbigAllN = sum(ambigChoicesNT(:))/sum(ambigChoicesNC(:));
+    
+    ambigAttN = ambigChoicesN - riskyChoicesN(2,:); 
+    ambigAttByAmbigN = nanmean(ambigAttN.'); % model free ambig attitude by ambig lavel
+    ambigAttAllN = nanmean(ambigAttN(:));
+    
+    AllNT = sum(riskyChoicesNT(:)) + sum(ambigChoicesNT(:)); % choice total counts = choice prob * tial counts
+    AllNC = sum(riskyChoicesNC(:)) + sum(ambigChoicesNC(:));
+    cpAllN = sum(AllNT(:))/AllNC;
+
+    
+
+   cp_title = {'subject ID', 'r25', 'r50','r75','rAll','a24', 'a50','a74','aAll','a24-r50', 'a50-r50','a74-r50','a-r50 All','All',...
+                             'r25', 'r50','r75','rAll','a24', 'a50','a74','aAll','a24-r50', 'a50-r50','a74-r50','a-r50 All','All'};
+   cp_data_subject = [subject,cpByRiskP.',cpRiskAllP,cpByAmbigP.',cpAmbigAllP,ambigAttByAmbigP,ambigAttAllP,cpAllP...
+                              cpByRiskN.',cpRiskAllN,cpByAmbigN.',cpAmbigAllN,ambigAttByAmbigN,ambigAttAllN,cpAllN];
+                          
+    xlFile = ['choice_prob_without5.xls'];
+    dlmwrite(xlFile, cp_data_subject, 'coffset', 1, '-append', 'delimiter', '\t');
 
 end
 

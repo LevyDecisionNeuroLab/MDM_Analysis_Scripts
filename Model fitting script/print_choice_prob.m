@@ -9,8 +9,9 @@ data_path = fullfile(root, 'PTB Behavior Log/'); % Original log from PTB
 subjects = getSubjectsInDir(data_path, 'subj'); %function
 exclude = [2581 2587]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
 subjects = subjects(~ismember(subjects, exclude));
+subjects = [2654 2655 2656 2657 2658 2659 2660 2661 2662 2663 2664 2665 2666]
 
-fitparwave = 'Behavior data fitpar_07172017';
+fitparwave = 'Behavior data fitpar_0520012018';
 cd (['D:\Ruonan\Projects in the lab\MDM Project\Medical Decision Making Imaging\MDM_imaging\Behavioral Analysis\Behavior fitpar files\' fitparwave]);
 path = ['D:\Ruonan\Projects in the lab\MDM Project\Medical Decision Making Imaging\MDM_imaging\Behavioral Analysis\Behavior fitpar files\' fitparwave];
 
