@@ -29,7 +29,7 @@ if (strcmp(model,'ambigNriskValPar'))
     % get the index of vF in val
     [~, vF_par_idx] = ismember(vF, vals);
     % get the value parameter
-    vF_par = vals_par(vF_par_idx)';
+    vF_par = vals_par(vF_par_idx)'; % change dimeinsion into 1 by n
     % calculate sv
     uF = ambig_utility(base,vF_par,pF,zeros(size(vF)),beta(3),beta(2),model); %fixed non-ambiguous
 

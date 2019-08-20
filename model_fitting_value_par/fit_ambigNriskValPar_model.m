@@ -1,4 +1,4 @@
-function [info_opt,p] = fit_ambigNriskValPar_model(choice,vF,vA,pF,pA,AL,model,b0,base,vals)
+function [info,p] = fit_ambigNriskValPar_model(choice,vF,vA,pF,pA,AL,model,b0,base,vals)
 % FIT_AMBIGNRISK_MODEL      Fit a variety of probabilistic ambiguity models
 % 
 %
@@ -71,13 +71,13 @@ function [info_opt,p] = fit_ambigNriskValPar_model(choice,vF,vA,pF,pA,AL,model,b
 thresh = 0.05;
 nobs = length(choice);
 
-% try parfor
+% try parfor. (Only if the outer loop does not use parfor?)
 % try multiple starting positions, need parallel pool to be opened in the
 % upper level script
-LL = zeros(size(b0,1),1);
-info_all = {};
+% LL = zeros(size(b0,1),1);
+% info_all = {};
 
-parfor i = 1 : size(b0,1)
+for i = 1 : size(b0,1)
     
     b00 = b0(i,:)'; % search starting point
     % Fit model, attempting to use FMINUNC first, then falling back to FMINSEARCH
@@ -89,11 +89,11 @@ parfor i = 1 : size(b0,1)
 
           if exitflag ~= 1 % trap occasional linesearch failures
              optimizer = 'fminsearch';
-             fprintf('FMINUNC failed to converge, switching to FMINSEARCH\n');
+%              fprintf('FMINUNC failed to converge, switching to FMINSEARCH\n');
           end         
        catch
           optimizer = 'fminsearch';
-          fprintf('Problem using FMINUNC, switching to FMINSEARCH\n');
+%           fprintf('Problem using FMINUNC, switching to FMINSEARCH\n');
        end
     else
        optimizer = 'fminsearch';
@@ -106,57 +106,103 @@ parfor i = 1 : size(b0,1)
        [b,negLL,exitflag,convg] = fminsearch(@local_negLL,b00,OPTIONS,choice,vF,vA,pF,pA,AL,model,base,vals);
     end
 
-    if exitflag ~= 1
-       fprintf('Optimization FAILED, #iterations = %g\n',convg.iterations);
-    else
-       fprintf('Optimization CONVERGED, #iterations = %g\n',convg.iterations);
-    end
-
+%     if exitflag ~= 1
+%        fprintf('Optimization FAILED, #iterations = %g\n',convg.iterations);
+%     else
+%        fprintf('Optimization CONVERGED, #iterations = %g\n',convg.iterations);
+%     end    
+    
     % Unrestricted log-likelihood
-    LL_iter = -negLL;
-    
-    % Restricted log-likelihood
-    LL0 = sum((choice==1).*log(0.5) + (1 - (choice==1)).*log(0.5)); % assuming no predictors, the chance of choosing and not choosing the lottery are both 50%
-
-    % Confidence interval, requires Hessian from FMINUNC
-    try
-        invH = inv(-H);
-        se = sqrt(diag(-invH));
-    catch
-    end
-    
-    info = struct(); % need this for parfor
-    info.nobs = nobs;
-    info.nb = length(b);
-    info.model = model;
-    info.optimizer = optimizer;
-    info.exitflag = exitflag;
-    info.b = b;
-    
-    % Choice probabilities (for VARIED)
-    info.p = choice_prob_ambigNriskValPar(base,vF,vA,pF,pA,AL,b,model,vals);
-
-    try
-        info.se = se;
-        info.ci = [b-se*norminv(1-thresh/2) b+se*norminv(1-thresh/2)]; % Wald confidence
-        info.tstat = b./se;
-    catch
+    LL = -negLL;
+    if i == 1
+        info.LL = LL;
     end
 
-    info.LL = LL_iter;
-    info.LL0 = LL0;
-    info.AIC = -2*LL_iter + 2*length(b);
-    info.BIC = -2*LL_iter + length(b)*log(nobs);
-    info.r2 = 1 - LL_iter/LL0; % McFadden's Pseudo r squared = 1-LLmodel/LLwithoutModel
+    if i == 1 || (i ~=1 && LL > info.LL)% first iteration; and if a later iteration renders larger likelihood, replace info
+        % Choice probabilities (for VARIED)
+        p = choice_prob_ambigNriskValPar(base,vF,vA,pF,pA,AL,b,model,vals);
 
-    info_all{i} = info
-    LL(i) = LL_iter
+        % Restricted log-likelihood
+        LL0 = sum((choice==1).*log(0.5) + (1 - (choice==1)).*log(0.5)); % assuming no predictors, the chance of choosing and not choosing the lottery are both 50%
+
+        % Confidence interval, requires Hessian from FMINUNC
+        try
+            invH = inv(-H);
+            se = sqrt(diag(-invH));
+        catch
+        end
+
+        info.nobs = nobs;
+        info.nb = length(b);
+        info.model = model;
+        info.optimizer = optimizer;
+        info.exitflag = exitflag;
+        info.b = b;
+
+        try
+            info.se = se;
+            info.ci = [b-se*norminv(1-thresh/2) b+se*norminv(1-thresh/2)]; % Wald confidence
+            info.tstat = b./se;
+        catch
+        end
+
+        info.LL = LL;
+        info.LL0 = LL0;
+        info.AIC = -2*LL + 2*length(b);
+        info.BIC = -2*LL + length(b)*log(nobs);
+        % https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-what-are-pseudo-r-squareds/
+        info.r2 = 1 - LL/LL0; % McFadden's Pseudo r squared = 1-LLmodel/LLwithoutModel (LL is negative)
+        info.r2_adj = 1-((LL - length(b))/LL0); % adjusted r2 
+    end    
+
+    % below are for parfor
+%     % Unrestricted log-likelihood
+%     LL_iter = -negLL;
+%     
+%     % Restricted log-likelihood
+%     LL0 = sum((choice==1).*log(0.5) + (1 - (choice==1)).*log(0.5)); % assuming no predictors, the chance of choosing and not choosing the lottery are both 50%
+% 
+%     % Confidence interval, requires Hessian from FMINUNC
+%     try
+%         invH = inv(-H);
+%         se = sqrt(diag(-invH));
+%     catch
+%     end
+%     
+%     info = struct(); % need this for parfor
+%     info.nobs = nobs;
+%     info.nb = length(b);
+%     info.model = model;
+%     info.optimizer = optimizer;
+%     info.exitflag = exitflag;
+%     info.b = b;
+%     
+%     % Choice probabilities (for VARIED)
+%     info.p = choice_prob_ambigNriskValPar(base,vF,vA,pF,pA,AL,b,model,vals);
+% 
+%     try
+%         info.se = se;
+%         info.ci = [b-se*norminv(1-thresh/2) b+se*norminv(1-thresh/2)]; % Wald confidence
+%         info.tstat = b./se;
+%     catch
+%     end
+% 
+%     info.LL = LL_iter;
+%     info.LL0 = LL0;
+%     info.AIC = -2*LL_iter + 2*length(b);
+%     info.BIC = -2*LL_iter + length(b)*log(nobs);
+%     info.r2 = 1 - LL_iter/LL0; % McFadden's Pseudo r squared = 1-LLmodel/LLwithoutModel
+%     info.r2_adj = 1-(LL - length(b)/LL0; % adjusted r2
+% 
+%     info_all{i} = info;
+%     LL(i) = LL_iter;
 end
 
-% choose the optimal model
-[~, opt_indx] = ismember(max(LL), LL);
-info_opt = info_all{opt_indx};
-p = info_opt.p
+% % for parfor
+% % choose the optimal model
+% [~, opt_indx] = ismember(max(LL), LL);
+% info_opt = info_all{opt_indx};
+% p = info_opt.p;
 
 
 

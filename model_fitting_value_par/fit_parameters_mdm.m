@@ -10,13 +10,15 @@ close all
 % poolobj = parpool('local', 8);
 
 %% Define conditions
-fitparwave = 'Behavior data fitpar_08190119'; % folder to save all the fitpar data structures
+fitparwave = 'Behavior data fitpar_08190519'; % folder to save all the fitpar data structures
 fitbywhat = 'value'; % what to use as values 'value', 'rating', 'arbitrary'(0,1,2,3,4)
 model = 'ambigNriskValPar'; % which utility function 'ambigNriskValPar'
 includeAmbig = true;
 search = 'grid'; % 'grid', 'single'
 
-% set up fitting parameters
+%% set up fitting parameters
+% value start point
+value_start = 5;
 if strcmp(search, 'grid')
     % grid search
     % range of each parameter
@@ -24,18 +26,18 @@ if strcmp(search, 'grid')
         slopeRange = -4:0.5:1;
         bRange = -2:0.5:2;
         aRange = 0:0.5:4;
-        val1Range = 10;
-        val2Range = 10;
-        val3Range = 10;
-        val4Range = 10;
+        val1Range = value_start;
+        val2Range = value_start;
+        val3Range = value_start;
+        val4Range = value_start;
     end
     % three dimenstions
     [b1, b2, b3, b4, b5, b6, b7] = ndgrid(slopeRange, bRange, aRange, val1Range, val2Range, val3Range, val4Range);
     % all posibile combinatinos of three parameters
-    b0 = [b1(:) b2(:) b3(:) b4(:), b5(:), b6(:), b7(:)];
+    b0 = [b1(:) b2(:) b3(:) b4(:) b5(:) b6(:) b7(:)];
 elseif strcmp(search,'single')
     % single search
-    b0 = [-1 0.5 0.5 10 10 10 10]; % starting point of the search process, [gamma, beta, alpha, val1, val2, val3, val4]
+    b0 = [-1 0.5 0.5 value_start value_start value_start value_start]; % starting point of the search process, [gamma, beta, alpha, val1, val2, val3, val4]
 end
 
 % all values
@@ -66,7 +68,7 @@ exclude = [2581]; % TEMPORARY: subjects incomplete data (that the script is not 
 subjects = subjects(~ismember(subjects, exclude));
 % subjects = [2654 2655 2656 2657 2658 2659 2660 2661 2662 2663 2664 2665 2666];
 % subjects = [2663 2664 2665 2666];
-subjects = [2663]
+subjects = [2073 2582 2587 2597 2651 2663 2665 2666];
 
 %% Individual subject fitting
 tic
@@ -75,6 +77,7 @@ parfor subj_idx = 1:length(subjects)
   domains = {'MON', 'MED'};
 
   for domain_idx = 1:length(domains)
+    
     
     subjectNum = subjects(subj_idx);
     domain = domains{domain_idx};
@@ -142,6 +145,8 @@ parfor subj_idx = 1:length(subjects)
     %       fit_ambigNrisk_model_Constrained: constrained on alpha and beta
 
     % Unconstrained fitting
+    % choice dimension 1 by n, ambigs/probs/vals dim n by 1. for model
+    % fitting to work need all 1 by n
     [info, p] = fit_ambigNriskValPar_model(choice, ...
         fitrefVal', ...
         fitVal', ...
@@ -152,7 +157,9 @@ parfor subj_idx = 1:length(subjects)
         b0, ...
         base, ...
         vals);
-
+    
+    disp(['Subject ' num2str(subjectNum) ' domain' domain ' unconstrained fitting completed'])
+    
     slope = info.b(1);
     a = info.b(3);
     b = info.b(2);
