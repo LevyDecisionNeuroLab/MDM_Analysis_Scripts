@@ -1,7 +1,7 @@
 function choiceMatrix = create_choice_matrix(vals,ambigs,probs,choices)
 
     % Chreate choice probability matrix per condition.Matrix dimensions are prob/ambig-level
-    % x payoff values. Used for graphing and some Excel exports.
+    % by payoff values. Used for graphing and some Excel exports.
 
     % Input: 
     %       vals:       values by trial
