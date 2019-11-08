@@ -81,38 +81,67 @@ for i = 1 : size(b0,1)
     
     b00 = b0(i,:)'; % search starting point
     % Fit model, attempting to use FMINUNC first, then falling back to FMINSEARCH
-    if exist('fminunc','file')
-       try
-          optimizer = 'fminunc';
-          OPTIONS = optimset('Display','off','LargeScale','off');
-              [b,negLL,exitflag,convg,g,H] = fminunc(@local_negLL,b00,OPTIONS,choice,vF,vA,pF,pA,AL,model,base,vals);
-
-          if exitflag ~= 1 % trap occasional linesearch failures
-             optimizer = 'fminsearch';
-%              fprintf('FMINUNC failed to converge, switching to FMINSEARCH\n');
-          end         
-       catch
-          optimizer = 'fminsearch';
-%           fprintf('Problem using FMINUNC, switching to FMINSEARCH\n');
-       end
-    else
-       optimizer = 'fminsearch';
-    end
-
-    if strcmp(optimizer,'fminsearch')
-       optimizer = 'fminsearch';
-       OPTIONS = optimset('Display','off','TolCon',1e-6,'TolFun',1e-5,'TolX',1e-5,...
-          'DiffMinChange',1e-4,'Maxiter',100000,'MaxFunEvals',20000);
-       [b,negLL,exitflag,convg] = fminsearch(@local_negLL,b00,OPTIONS,choice,vF,vA,pF,pA,AL,model,base,vals);
-    end
+%     if exist('fminunc','file')
+%        try
+%           optimizer = 'fminunc';
+%           OPTIONS = optimset('Display','off','LargeScale','off');
+%               [b,negLL,exitflag,convg,g,H] = fminunc(@local_negLL,b00,OPTIONS,choice,vF,vA,pF,pA,AL,model,base,vals);
+% 
+%           if exitflag ~= 1 % trap occasional linesearch failures
+%              optimizer = 'fminsearch';
+% %              fprintf('FMINUNC failed to converge, switching to FMINSEARCH\n');
+%           end         
+%        catch
+%           optimizer = 'fminsearch';
+% %           fprintf('Problem using FMINUNC, switching to FMINSEARCH\n');
+%        end
+%     else
+%        optimizer = 'fminsearch';
+%     end
+% 
+%     if strcmp(optimizer,'fminsearch')
+%        optimizer = 'fminsearch';
+%        OPTIONS = optimset('Display','off','TolCon',1e-6,'TolFun',1e-5,'TolX',1e-5,...
+%           'DiffMinChange',1e-4,'Maxiter',100000,'MaxFunEvals',20000);
+%        [b,negLL,exitflag,convg] = fminsearch(@local_negLL,b00,OPTIONS,choice,vF,vA,pF,pA,AL,model,base,vals);
+%     end
 
 %     if exitflag ~= 1
 %        fprintf('Optimization FAILED, #iterations = %g\n',convg.iterations);
 %     else
 %        fprintf('Optimization CONVERGED, #iterations = %g\n',convg.iterations);
 %     end    
+
+    % fit model, using BADS
+    options = [];
+%     options = bads('defaults');             % Get a default OPTIONS struct
+%     options.MaxFunEvals         = 5000;       % Very low budget of function evaluations
+%     options.Display             = 'final';   % Print only basic output ('off' turns off)
+%     options.UncertaintyHandling = 0;        % We tell BADS that the objective is deterministic
     
-    % Unrestricted log-likelihood
+%     mu.choice = choice;
+%     mu.vF = vF;
+%     mu.vA = vA;
+%     mu.pF = pF;
+%     mu.pA = pA;
+%     mu.AL = AL;
+%     mu.model = model;
+%     mu.base = base;
+%     mu.vals = vals;
+ 
+    
+    if strcmp(model, 'ambigNriskValPar')
+        lb = [-10 -10 0 0 0 0 0];
+        ub = [10 10 10 50 50 50 50];
+    elseif strcmp(model, 'ambigSVPar')
+        lb = [-10 -10 0 0 0 0];
+        ub = [10 10 50 50 50 50];        
+    end
+    
+    [b, negLL, exitflag, convg] = bads(@local_negLL,b00',lb,ub,[],[],[],options,choice,vF,vA,pF,pA,AL,model,base,vals);
+%     [b, negLL, exitflag, convg] = bads(@local_negLL,b00',[],[],[],[],[],options,mu);
+
+% Unrestricted log-likelihood
     LL = -negLL;
     if i == 1
         info.LL = LL;
@@ -135,7 +164,7 @@ for i = 1 : size(b0,1)
         info.nobs = nobs;
         info.nb = length(b);
         info.model = model;
-        info.optimizer = optimizer;
+%         info.optimizer = optimizer;
         info.exitflag = exitflag;
         info.b = b;
 
@@ -210,7 +239,17 @@ end
 % This is the function to minimize, sum of -log-likelihood.
 function sumerr = local_negLL(beta,choice,vF,vA,pF,pA,AL,model,base,vals)
 % estimated likelihood of chooseing the lottery
-p = choice_prob_ambigNriskValPar(base,vF,vA,pF,pA,AL,beta,model,vals); 
+% choice = mu.choice;
+% vF = mu.vF;
+% vA = mu.vA;
+% pF = mu.pF;
+% pA = mu.pA;
+% AL = mu.AL;
+% model = mu.model;
+% base = mu.base;
+% vals = mu.vals;
+
+p = choice_prob_ambigNriskValPar(base,vF,vA,pF,pA,AL,beta',model,vals); 
 
 % Trap log(0)
 ind = p == 1;

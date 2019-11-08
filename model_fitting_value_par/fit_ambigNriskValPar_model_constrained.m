@@ -82,8 +82,14 @@ for i = 1 : size(b0,1)
     
     % constraint: 0<val1<val2<val3<val4
     % ineq_mat*b00 <= ineq
-    % linear inequality constraints matrix
-    ineq_mat = [0 0 0 -1 0 0 0; 0 0 0 1 -1 0 0; 0 0 0 0 1 -1 0; 0 0 0 0 0 1 -1];
+    % linear inequality constraints matrix, matrix different for different
+    % models
+    if strcmp(model, 'ambigNriskValPar')
+        ineq_mat = [0 0 0 -1 0 0 0; 0 0 0 1 -1 0 0; 0 0 0 0 1 -1 0; 0 0 0 0 0 1 -1];
+    elseif strcmp(model, 'ambigSVPar')
+        ineq_mat = [0 0 -1 0 0 0; 0 0 1 -1 0 0; 0 0 0 1 -1 0; 0 0 0 0 1 -1];
+    end
+    
     % linear inequality constraints
     ineq = [0 0 0 0];
     % lower bounds
@@ -93,7 +99,10 @@ for i = 1 : size(b0,1)
     
     [b,negLL,exitflag,convg] = fmincon(@local_negLL,b00,ineq_mat,ineq,[],[],lb,ub,[],OPTIONS,choice,vF,vA,pF,pA,AL,model,base,vals);
     %X = fmincon(fun,x0,A,B,Aeq,Beq,lb,ub,nonlcon,Opts,a,b)
-
+    
+    % using bads
+    nonbcon = 
+    [b,negLL,exitflag,convg] = bads(@local_negLL,b00,OPTIONS,choice,vF,vA,pF,pA,AL,model,base,vals, nonbcon);
     
     % Unrestricted log-likelihood
     LL = -negLL;

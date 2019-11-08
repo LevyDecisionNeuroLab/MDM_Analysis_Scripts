@@ -10,34 +10,45 @@ close all
 % poolobj = parpool('local', 8);
 
 %% Define conditions
-fitparwave = 'Behavior data fitpar_08190519'; % folder to save all the fitpar data structures
+fitparwave = 'Behavior data fitpar_09300219'; % folder to save all the fitpar data structures
 fitbywhat = 'value'; % what to use as values 'value', 'rating', 'arbitrary'(0,1,2,3,4)
-model = 'ambigNriskValPar'; % which utility function 'ambigNriskValPar'
+model = 'ambigSVPar'; % which utility function 'ambigNriskValPar', 'ambigSVPar'
 includeAmbig = true;
 search = 'grid'; % 'grid', 'single'
 
 %% set up fitting parameters
 % value start point
-value_start = 5;
+value_start = 50;
+grid_step = 0.5;
+
 if strcmp(search, 'grid')
     % grid search
-    % range of each parameter
+    % range of each parameter    
+    slopeRange = -4:grid_step:1;
+    bRange = -2:grid_step:2;
+    aRange = 0:grid_step:4;
+    val1Range = value_start;
+    val2Range = value_start;
+    val3Range = value_start;
+    val4Range = value_start;
+    
     if strcmp(model,'ambigNriskValPar')
-        slopeRange = -4:0.5:1;
-        bRange = -2:0.5:2;
-        aRange = 0:0.5:4;
-        val1Range = value_start;
-        val2Range = value_start;
-        val3Range = value_start;
-        val4Range = value_start;
+        [b1, b2, b3, b4, b5, b6, b7] = ndgrid(slopeRange, bRange, aRange, val1Range, val2Range, val3Range, val4Range);
+        % all posibile combinatinos of three parameters
+        b0 = [b1(:) b2(:) b3(:) b4(:) b5(:) b6(:) b7(:)];
+    elseif strcmp(model, 'ambigSVPar')
+        [b1, b2, b3, b4, b5, b6] = ndgrid(slopeRange, bRange, val1Range, val2Range, val3Range, val4Range);
+        % all posibile combinatinos of three parameters
+        b0 = [b1(:) b2(:) b3(:) b4(:) b5(:) b6(:)];
     end
-    % three dimenstions
-    [b1, b2, b3, b4, b5, b6, b7] = ndgrid(slopeRange, bRange, aRange, val1Range, val2Range, val3Range, val4Range);
-    % all posibile combinatinos of three parameters
-    b0 = [b1(:) b2(:) b3(:) b4(:) b5(:) b6(:) b7(:)];
 elseif strcmp(search,'single')
-    % single search
-    b0 = [-1 0.5 0.5 value_start value_start value_start value_start]; % starting point of the search process, [gamma, beta, alpha, val1, val2, val3, val4]
+    if strcmp(model,'ambigNriskValPar')
+        % single search
+        b0 = [-1 0.5 0.5 value_start value_start value_start value_start]; % starting point of the search process, [gamma, beta, alpha, val1, val2, val3, val4]
+    elseif strcmp(model, 'ambigSVPar')
+        % single search
+        b0 = [-1 0.5 value_start value_start value_start value_start]; % starting point of the search process, [gamma, beta, val1, val2, val3, val4]
+    end
 end
 
 % all values
@@ -67,8 +78,9 @@ subjects = getSubjectsInDir(data_path, 'subj');
 exclude = [2581]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
 subjects = subjects(~ismember(subjects, exclude));
 % subjects = [2654 2655 2656 2657 2658 2659 2660 2661 2662 2663 2664 2665 2666];
-% subjects = [2663 2664 2665 2666];
-subjects = [2073 2582 2587 2597 2651 2663 2665 2666];
+% subjects = [2663];
+% subjects = [2073 2582 2587 2597 2651 2663 2665 2666];
+% subjects = [2073 2582 2587 2597 2651 2663 2665 2666 2550 2585 2596 2600 2655 2659 2660 2664];
 
 %% Individual subject fitting
 tic
@@ -141,12 +153,23 @@ parfor subj_idx = 1:length(subjects)
     prob = unique(probs); % All probability levels
 
     % Two versions of function:
-    %       fit_ambgiNrisk_model: unconstrained
-    %       fit_ambigNrisk_model_Constrained: constrained on alpha and beta
+    %       fit_ambgiNriskValPar_model: unconstrained
+    %       fit_ambigNriskValPar_model_Constrained
 
     % Unconstrained fitting
     % choice dimension 1 by n, ambigs/probs/vals dim n by 1. for model
     % fitting to work need all 1 by n
+%     [info, p] = fit_ambigNriskValPar_model_constrained(choice, ...
+%         fitrefVal', ...
+%         fitVal', ...
+%         refProb', ...
+%         probs', ...
+%         ambigs', ...
+%         model, ...
+%         b0, ...
+%         base, ...
+%         vals);
+    
     [info, p] = fit_ambigNriskValPar_model(choice, ...
         fitrefVal', ...
         fitVal', ...
@@ -156,14 +179,20 @@ parfor subj_idx = 1:length(subjects)
         model, ...
         b0, ...
         base, ...
-        vals);
+        vals);    
     
-    disp(['Subject ' num2str(subjectNum) ' domain' domain ' unconstrained fitting completed'])
+    disp(['Subject ' num2str(subjectNum) ' domain' domain ' constrained fitting completed'])
     
-    slope = info.b(1);
-    a = info.b(3);
-    b = info.b(2);
-    r2 = info.r2;
+    if strcmp(model, 'ambigNriskValPar')
+        slope = info.b(1);
+        a = info.b(3);
+        b = info.b(2);
+        r2 = info.r2;
+    elseif strcmp(model, 'ambigSVPar')
+        slope = info.b(1);
+        b = info.b(2);
+        r2 = info.r2;      
+    end
 
     % choice probability for each trial based on fitted model parameters
     % should not using the model fitting inputs, but rather also
@@ -303,12 +332,20 @@ parfor subj_idx = 1:length(subjects)
     Data.choiceLott = choiceAll;
     Data.choiceModeled = choiceModeled;
     
-    Data.MLE = info;
-    Data.alpha = info.b(3);
-    Data.beta = info.b(2);
-    Data.gamma = info.b(1);
-    Data.val_par = info.b(4:7);
-    Data.r2 = info.r2;
+    if strcmp(model, 'ambigNriskValPar')
+        Data.MLE = info;
+        Data.alpha = info.b(3);
+        Data.beta = info.b(2);
+        Data.gamma = info.b(1);
+        Data.val_par = info.b(4:7);
+        Data.r2 = info.r2;
+    elseif strcmp(model, 'ambigSVPar')
+        Data.MLE = info;
+        Data.beta = info.b(2);
+        Data.gamma = info.b(1);
+        Data.val_par = info.b(3:6);
+        Data.r2 = info.r2;
+    end
     
     % save data struct for the two domains
     % directly using load/save violates transparency, use a function

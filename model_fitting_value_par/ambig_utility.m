@@ -7,6 +7,10 @@ function y = ambig_utility(base,v,p,AL,alpha,beta,model)
 if strcmp(model,'ambiguity') || strcmp(model,'ambigNrisk') || strcmp(model,'ambigNriskFixSlope') || strcmp(model, 'ambigNriskValPar')
     % the model we are using
     y = (p - beta .* (AL./2)) .* v .^alpha + (1-p - beta .* (AL./2)) .* base .^alpha;
+elseif strcmp(model, 'ambigSVPar')
+    % this model takes sv(v.^alpha) as paramete, and only estimates
+    % ambiguity attitudes
+    y = (p - beta .* (AL./2)) .* v;
 elseif strcmp(model,'ambigPower')
     y = p .^ (1+beta.*AL) .* v .^alpha; % change that
 elseif strcmp(model,'discounting')

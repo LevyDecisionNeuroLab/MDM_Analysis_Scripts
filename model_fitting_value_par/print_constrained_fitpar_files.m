@@ -3,8 +3,9 @@ clearvars
 close all
 
 %% Define conditions
-fitparwave = 'Behavior data fitpar_08210119';
+fitparwave = 'Behavior data fitpar_09300219';
 includeAmbig = true;
+model = 'ambigSVPar';
 
 %% Setup
 root = 'D:\Ruonan\Projects in the lab\MDM Project\Medical Decision Making Imaging\MDM_imaging\Behavioral Analysis';
@@ -14,7 +15,7 @@ data_path = fullfile(root, 'PTB Behavior Log/'); % Original log from PTB
 subjects = getSubjectsInDir(data_path, 'subj'); %function
 exclude = [2581]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
 subjects = subjects(~ismember(subjects, exclude));
-subjects = [2073 2582 2587 2597 2651 2663 2665 2666 2550 2585 2596 2600 2655 2659 2660 2664];
+% subjects = [2073 2582 2587 2597 2651 2663 2665 2666 2550 2585 2596 2600 2655 2659 2660 2664];
 
 path = fullfile(root, 'Behavior fitpar files', fitparwave,filesep);
 cd(path);
@@ -51,27 +52,34 @@ for s = 1:length(subjects)
 %     svByLottP = Datamon.svByLott;
 %     svRefP = Datamon.svRef;
 
-    alphaP = Datamon.alpha;
-%     alphaseP = Datamon.MLE.se(3);
     betaP = Datamon.beta;
 %     betaseP = Datamon.MLE.se(2);
     gammaP = Datamon.gamma;
 %     gammaseP = Datamon.MLE.se(1);
+
+    if strcmp(model, 'ambigNriskValPar')
+        alphaP = Datamon.alpha;
+        %     alphaseP = Datamon.MLE.se(3);
+    elseif strcmp(model, 'ambigSVPar')
+         alphaP = NaN;
+    end
+    
     val1P = Datamon.val_par(1);
-%     val1seP = Datamon.MLE.se(4);
+    %     val1seP = Datamon.MLE.se(4);
     val2P = Datamon.val_par(2);
-%     val2seP = Datamon.MLE.se(5);
+    %     val2seP = Datamon.MLE.se(5);
     val3P = Datamon.val_par(3);
-%     val3seP = Datamon.MLE.se(6);
+    %     val3seP = Datamon.MLE.se(6);
     val4P = Datamon.val_par(4);
-%     val4seP = Datamon.MLE.se(7);
+    %     val4seP = Datamon.MLE.se(7);      
     LLP = Datamon.MLE.LL;
     r2_adjP = Datamon.MLE.r2_adj;
     AICP = Datamon.MLE.AIC;
     BICP = Datamon.MLE.BIC;
     modelP = Datamon.MLE.model;
     exitFlagP = Datamon.MLE.exitflag;
-    optimizerP = Datamon.MLE.optimizer;
+%     optimizerP = Datamon.MLE.optimizer;
+    optimizerP = 'BADS';
     
 
     % load med file for subject and extract params & choice data
@@ -83,8 +91,13 @@ for s = 1:length(subjects)
     riskyChoicesNC = choiceMatrixN.riskCount;
     ambigChoicesNC = choiceMatrixN.ambigCount;
 
-    alphaN = Datamed.alpha;
-%     alphaseN = Datamed.MLE.se(3);
+    if strcmp(model, 'ambigNriskValPar')
+        alphaN = Datamed.alpha;
+        %     alphaseP = Datamon.MLE.se(3);
+    elseif strcmp(model, 'ambigSVPar')
+         alphaN = NaN;
+    end
+    
     betaN = Datamed.beta;
 %     betaseN = Datamed.MLE.se(2);
     gammaN = Datamed.gamma;
@@ -103,7 +116,8 @@ for s = 1:length(subjects)
     BICN = Datamed.MLE.BIC;
     modelN = Datamed.MLE.model;
     exitFlagN = Datamed.MLE.exitflag;
-    optimizerN = Datamed.MLE.optimizer;
+%     optimizerN = Datamed.MLE.optimizer; 
+    optimizerN = 'BADS';
 
     %write into param text file
     fprintf(fid1,'%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%s\t%d\t%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%s\t%d\t%s\n',...

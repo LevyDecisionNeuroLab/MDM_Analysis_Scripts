@@ -3,7 +3,8 @@ clearvars
 close all
 
 %% Define conditions
-fitparwave = 'Behavior data fitpar_08210119';
+fitparwave = 'Behavior data fitpar_08290119';
+model = 'ambigSVPar';
 includeAmbig = true;
 
 %% Setup
@@ -14,7 +15,7 @@ data_path = fullfile(root, 'PTB Behavior Log/'); % Original log from PTB
 subjects = getSubjectsInDir(data_path, 'subj'); %function
 exclude = [2581]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
 subjects = subjects(~ismember(subjects, exclude));
-subjects = [2073 2582 2587 2597 2651 2663 2665 2666 2550 2585 2596 2600 2655 2659 2660 2664];
+% subjects = [2073 2582 2587 2597 2651 2663 2665 2666 2550 2585 2596 2600 2655 2659 2660 2664];
 
 path = fullfile(root, 'Behavior fitpar files', fitparwave,filesep);
 cd(path);
@@ -30,9 +31,13 @@ output_file1 = ['param_' fitparwave '.txt'];
 % results file
 fid1 = fopen([output_file1],'w')
 
-fprintf(fid1,'subject\tmonetary\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tmedical\n')
-fprintf(fid1,'\talpha\talphase\tbeta\tbetase\tgamma\tgammase\tval1\tval1se\tval2\tval2se\tval3\tval3se\tval4\tval4se\tLL\tr2_adj\tAIC\tBIC\tmodel\texitFlag\toptimizer\talpha\talphase\tbeta\tbetase\tgamma\tgammase\tval1\tval1se\tval2\tval2se\tval3\tval3se\tval4\tval4se\tLL\tr2_adj\tAIC\tBIC\tmodel\texitFlag\toptimizer\n')
-
+if strcmp(model, 'ambigNriskValPar')
+    fprintf(fid1,'subject\tmonetary\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tmedical\n')
+    fprintf(fid1,'\talpha\talphase\tbeta\tbetase\tgamma\tgammase\tval1\tval1se\tval2\tval2se\tval3\tval3se\tval4\tval4se\tLL\tr2_adj\tAIC\tBIC\tmodel\texitFlag\toptimizer\talpha\talphase\tbeta\tbetase\tgamma\tgammase\tval1\tval1se\tval2\tval2se\tval3\tval3se\tval4\tval4se\tLL\tr2_adj\tAIC\tBIC\tmodel\texitFlag\toptimizer\n')
+elseif strcmp(model, 'ambigSVPar')
+    fprintf(fid1,'subject\tmonetary\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tmedical\n')
+    fprintf(fid1,'\tbeta\tbetase\tgamma\tgammase\tval1\tval1se\tval2\tval2se\tval3\tval3se\tval4\tval4se\tLL\tr2_adj\tAIC\tBIC\tmodel\texitFlag\toptimizer\tbeta\tbetase\tgamma\tgammase\tval1\tval1se\tval2\tval2se\tval3\tval3se\tval4\tval4se\tLL\tr2_adj\tAIC\tBIC\tmodel\texitFlag\toptimizer\n')
+end    
 
 % Fill in subject numbers separated by commas
 % subjects = {'87','88'};
@@ -50,28 +55,49 @@ for s = 1:length(subjects)
     
 %     svByLottP = Datamon.svByLott;
 %     svRefP = Datamon.svRef;
-
-    alphaP = Datamon.alpha;
-    alphaseP = Datamon.MLE.se(3);
-    betaP = Datamon.beta;
-    betaseP = Datamon.MLE.se(2);
-    gammaP = Datamon.gamma;
-    gammaseP = Datamon.MLE.se(1);
-    val1P = Datamon.val_par(1);
-    val1seP = Datamon.MLE.se(4);
-    val2P = Datamon.val_par(2);
-    val2seP = Datamon.MLE.se(5);
-    val3P = Datamon.val_par(3);
-    val3seP = Datamon.MLE.se(6);
-    val4P = Datamon.val_par(4);
-    val4seP = Datamon.MLE.se(7);
-    LLP = Datamon.MLE.LL;
-    r2_adjP = Datamon.MLE.r2_adj;
-    AICP = Datamon.MLE.AIC;
-    BICP = Datamon.MLE.BIC;
-    modelP = Datamon.MLE.model;
-    exitFlagP = Datamon.MLE.exitflag;
-    optimizerP = Datamon.MLE.optimizer;
+    if strcmp(model, 'ambigNriskValPar')
+        alphaP = Datamon.alpha;
+        alphaseP = Datamon.MLE.se(3);
+        betaP = Datamon.beta;
+        betaseP = Datamon.MLE.se(2);
+        gammaP = Datamon.gamma;
+        gammaseP = Datamon.MLE.se(1);
+        val1P = Datamon.val_par(1);
+        val1seP = Datamon.MLE.se(4);
+        val2P = Datamon.val_par(2);
+        val2seP = Datamon.MLE.se(5);
+        val3P = Datamon.val_par(3);
+        val3seP = Datamon.MLE.se(6);
+        val4P = Datamon.val_par(4);
+        val4seP = Datamon.MLE.se(7);
+        LLP = Datamon.MLE.LL;
+        r2_adjP = Datamon.MLE.r2_adj;
+        AICP = Datamon.MLE.AIC;
+        BICP = Datamon.MLE.BIC;
+        modelP = Datamon.MLE.model;
+        exitFlagP = Datamon.MLE.exitflag;
+        optimizerP = Datamon.MLE.optimizer;
+    elseif strcmp(model, 'ambigSVPar')
+        betaP = Datamon.beta;
+        betaseP = Datamon.MLE.se(2);
+        gammaP = Datamon.gamma;
+        gammaseP = Datamon.MLE.se(1);
+        val1P = Datamon.val_par(1);
+        val1seP = Datamon.MLE.se(3);
+        val2P = Datamon.val_par(2);
+        val2seP = Datamon.MLE.se(4);
+        val3P = Datamon.val_par(3);
+        val3seP = Datamon.MLE.se(5);
+        val4P = Datamon.val_par(4);
+        val4seP = Datamon.MLE.se(6);
+        LLP = Datamon.MLE.LL;
+        r2_adjP = Datamon.MLE.r2_adj;
+        AICP = Datamon.MLE.AIC;
+        BICP = Datamon.MLE.BIC;
+        modelP = Datamon.MLE.model;
+        exitFlagP = Datamon.MLE.exitflag;
+        optimizerP = Datamon.MLE.optimizer;        
+    end
     
 
     % load med file for subject and extract params & choice data
@@ -83,33 +109,60 @@ for s = 1:length(subjects)
     riskyChoicesNC = choiceMatrixN.riskCount;
     ambigChoicesNC = choiceMatrixN.ambigCount;
 
-    alphaN = Datamed.alpha;
-    alphaseN = Datamed.MLE.se(3);
-    betaN = Datamed.beta;
-    betaseN = Datamed.MLE.se(2);
-    gammaN = Datamed.gamma;
-    gammaseN = Datamed.MLE.se(1);
-    val1N = Datamed.val_par(1);
-    val1seN = Datamed.MLE.se(4);
-    val2N = Datamed.val_par(2);
-    val2seN = Datamed.MLE.se(5);
-    val3N = Datamed.val_par(3);
-    val3seN = Datamed.MLE.se(6);
-    val4N = Datamed.val_par(4);
-    val4seN = Datamed.MLE.se(7);
-    LLN = Datamed.MLE.LL;
-    r2_adjN = Datamed.MLE.r2_adj;
-    AICN = Datamed.MLE.AIC;
-    BICN = Datamed.MLE.BIC;
-    modelN = Datamed.MLE.model;
-    exitFlagN = Datamed.MLE.exitflag;
-    optimizerN = Datamed.MLE.optimizer;
+    if strcmp(model, 'ambigNriskValPar')
+        alphaN = Datamed.alpha;
+        alphaseN = Datamed.MLE.se(3);
+        betaN = Datamed.beta;
+        betaseN = Datamed.MLE.se(2);
+        gammaN = Datamed.gamma;
+        gammaseN = Datamed.MLE.se(1);
+        val1N = Datamed.val_par(1);
+        val1seN = Datamed.MLE.se(4);
+        val2N = Datamed.val_par(2);
+        val2seN = Datamed.MLE.se(5);
+        val3N = Datamed.val_par(3);
+        val3seN = Datamed.MLE.se(6);
+        val4N = Datamed.val_par(4);
+        val4seN = Datamed.MLE.se(7);
+        LLN = Datamed.MLE.LL;
+        r2_adjN = Datamed.MLE.r2_adj;
+        AICN = Datamed.MLE.AIC;
+        BICN = Datamed.MLE.BIC;
+        modelN = Datamed.MLE.model;
+        exitFlagN = Datamed.MLE.exitflag;
+        optimizerN = Datamed.MLE.optimizer;
+    elseif strcmp(model, 'ambigSVPar')
+        betaN = Datamed.beta;
+        betaseN = Datamed.MLE.se(2);
+        gammaN = Datamed.gamma;
+        gammaseN = Datamed.MLE.se(1);
+        val1N = Datamed.val_par(1);
+        val1seN = Datamed.MLE.se(3);
+        val2N = Datamed.val_par(2);
+        val2seN = Datamed.MLE.se(4);
+        val3N = Datamed.val_par(3);
+        val3seN = Datamed.MLE.se(5);
+        val4N = Datamed.val_par(4);
+        val4seN = Datamed.MLE.se(6);
+        LLN = Datamed.MLE.LL;
+        r2_adjN = Datamed.MLE.r2_adj;
+        AICN = Datamed.MLE.AIC;
+        BICN = Datamed.MLE.BIC;
+        modelN = Datamed.MLE.model;
+        exitFlagN = Datamed.MLE.exitflag;
+        optimizerN = Datamed.MLE.optimizer;
+    end        
 
     %write into param text file
-    fprintf(fid1,'%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%s\t%f\t%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%s\t%f\t%s\n',...
-            num2str(subject),alphaP,alphaseP,betaP,betaseP,gammaP,gammaseP,val1P,val1seP,val2P,val2seP,val3P,val3seP,val4P,val4seP,LLP,r2_adjP,AICP,BICP,modelP,exitFlagP,optimizerP,...
-                             alphaN,alphaseN,betaN,betaseN,gammaN,gammaseN,val1N,val1seN,val2N,val2seN,val3N,val3seN,val4N,val4seN,LLN,r2_adjN,AICN,BICN,modelN,exitFlagN,optimizerN);
-
+    if strcmp(model, 'ambigNriskValPar')
+        fprintf(fid1,'%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%s\t%f\t%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%s\t%f\t%s\n',...
+                num2str(subject),alphaP,alphaseP,betaP,betaseP,gammaP,gammaseP,val1P,val1seP,val2P,val2seP,val3P,val3seP,val4P,val4seP,LLP,r2_adjP,AICP,BICP,modelP,exitFlagP,optimizerP,...
+                                 alphaN,alphaseN,betaN,betaseN,gammaN,gammaseN,val1N,val1seN,val2N,val2seN,val3N,val3seN,val4N,val4seN,LLN,r2_adjN,AICN,BICN,modelN,exitFlagN,optimizerN);
+    elseif strcmp(model, 'ambigSVPar')
+                fprintf(fid1,'%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%s\t%f\t%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%s\t%f\t%s\n',...
+                num2str(subject),betaP,betaseP,gammaP,gammaseP,val1P,val1seP,val2P,val2seP,val3P,val3seP,val4P,val4seP,LLP,r2_adjP,AICP,BICP,modelP,exitFlagP,optimizerP,...
+                                 betaN,betaseN,gammaN,gammaseN,val1N,val1seN,val2N,val2seN,val3N,val3seN,val4N,val4seN,LLN,r2_adjN,AICN,BICN,modelN,exitFlagN,optimizerN);
+    end
   
     %% print true and model fitting choice prob by trial types
     choiceMatrixModelP = create_choice_matrix(Datamon.vals,Datamon.ambigs,Datamon.probs,Datamon.choiceModeled);
