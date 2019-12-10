@@ -143,6 +143,7 @@ for i = 1 : size(b0,1)
         info.AIC = -2*LL + 2*length(b);
         info.BIC = -2*LL + length(b)*log(nobs);
         info.r2 = 1 - LL/LL0; % McFadden's Pseudo r squared = 1-LLmodel/LLwithoutModel
+        info.r2_adj = 1 - ((LL-length(b))/LL0);
     end    
 end
 

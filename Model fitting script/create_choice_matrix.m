@@ -23,7 +23,7 @@ function choiceMatrix = create_choice_matrix(vals,ambigs,probs,choices)
     
     ambigUniq = unique(ambigs(ambigs > 0)); % All non-zero ambiguity levels 
     probUniq = unique(probs); % All probability levels
-    value = unique(vals(ambigs > 0)); % each lottery payoff value under ambiguity
+    value = unique(vals); % each lottery payoff value under ambiguity
 
     % Ambiguity levels by payoff values
     ambigChoicesProb = zeros(length(ambigUniq), length(value)); % each row an ambiguity level

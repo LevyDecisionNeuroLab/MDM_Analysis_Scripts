@@ -7,12 +7,50 @@
 clearvars
 close all
 
+% poolobj = parpool('local', 10);
+
 %% Define conditions
-fitparwave = 'Behavior data fitpar_0523012018'; % folder to save all the fitpar data structures
-fitbywhat = 'arbitrary'; % what to use as values 'value', 'rating', 'arbitrary'(0,1,2,3,4)
-model = 'riskAmbigPremiumVar'; % which utility function
+fitparwave = 'Behavior data fitpar_08220219'; % folder to save all the fitpar data structures
+fitbywhat = 'value'; % what to use as values 'value', 'rating', 'arbitrary'(0,1,2,3,4)
+model = 'ambigNrisk'; % which utility function
 includeAmbig = true;
 search = 'grid';
+
+%% fitting grid search
+grid_step = 0.2;
+
+if strcmp(search, 'grid')
+    % grid search
+    % range of each parameter
+    if strcmp(model,'ambigNrisk')
+        slopeRange = -4:grid_step:1;
+        bRange = -2:grid_step:2;
+        aRange = 0:grid_step:4;
+    else
+        slopeRange = -4:grid_step:1;
+        bRange = -2:grid_step:2;
+        aRange = -2:grid_step:2;
+    end
+    % three dimenstions
+    [b1, b2, b3] = ndgrid(slopeRange, bRange, aRange);
+    % all posibile combinatinos of three parameters
+    b0 = [b1(:) b2(:) b3(:)];
+elseif strcmp(search,'single')
+    % single search
+    b0 = [-1 0.5 0.5]; % starting point of the search process, [gamma, beta, alpha]
+% elseif strcmp(search, 'random')
+%     % independently randomized multiple search starting points
+%     bstart = [-1 0 1]; % starting point of the search process, [gamma, beta, alpha]
+%     itr = 100; % 100 iteration of starting point
+%     b0 = zeros(itr,length(bstart));
+%     for i = 1:itr
+%         % gamma: negative, around -1, so (-2,0)
+%         % beta: [-1,1] possible to be larger than 1?
+%         % alpha: (0,4)
+%         b0(i,:) = bstart + [-1+2*rand(1) -1+2*rand(1) -1+2*rand(1)]; % randomize search starting point, slope, beta, alpha
+%     end
+end
+
 
 %% Set up loading & subject selection
 root = 'D:\Ruonan\Projects in the lab\MDM Project\Medical Decision Making Imaging\MDM_imaging\Behavioral Analysis';
@@ -39,25 +77,17 @@ subjects = subjects(~ismember(subjects, exclude));
 rating = csvread(rating_filename,1,0); %reads data from the file starting at row offset R1 and column offset C1. For example, the offsets R1=0, C1=0 specify the first value in the file.
 
 %% Individual subject fitting
+tic
 
-for subj_idx = 1:length(subjects)
+parfor subj_idx = 1:length(subjects)
   domains = {'MON', 'MED'};
 
   for domain_idx = 1:length(domains)
     subjectNum = subjects(subj_idx);
     domain = domains{domain_idx};
     
-    fname = sprintf('MDM_%s_%d.mat', domain, subjectNum);
-    load(fname) % produces variable `Datamon` or 'Datamed' for convenience, change its name into 'Data'
-%     sprintf('MDM_%s_%d.mat', domain, subjectNum);
-    
-    if strcmp(domain, 'MON') ==1
-        Data = Datamon;
-        clear Datamon
-    else
-        Data = Datamed;
-        clear Datamed
-    end
+    % load/save does not work in parfor, instead, using a function
+    Data= load_mat(subjectNum, domain);
     
     %% Load subjective ratings
     % prepare subjective rating for each trial
@@ -160,39 +190,6 @@ for subj_idx = 1:length(subjects)
         prob = unique(probs); % All probability levels
         base = 0; % ? % TODO: Find out meaning -- undescribed in function. RJ-another parm in the model. Not used.
 
-        if strcmp(search, 'grid')
-            % grid search
-            % range of each parameter
-            if strcmp(model,'ambigNrisk')
-                slopeRange = -4:0.2:1;
-                bRange = -2:0.2:2;
-                aRange = 0:0.2:4;
-            else
-                slopeRange = -4:0.2:1;
-                bRange = -2:0.2:2;
-                aRange = -2:0.2:2;
-            end
-            % three dimenstions
-            [b1, b2, b3] = ndgrid(slopeRange, bRange, aRange);
-            % all posibile combinatinos of three parameters
-            b0 = [b1(:) b2(:) b3(:)];
-        elseif strcmp(search,'single')
-            % single search
-            b0 = [-1 0.5 0.5]; % starting point of the search process, [gamma, beta, alpha]
-        elseif strcmp(search, 'random')
-            % independently randomized multiple search starting points
-            bstart = [-1 0 1]; % starting point of the search process, [gamma, beta, alpha]
-            itr = 100; % 100 iteration of starting point
-            b0 = zeros(itr,length(bstart));
-            for i = 1:itr
-                % gamma: negative, around -1, so (-2,0)
-                % beta: [-1,1] possible to be larger than 1?
-                % alpha: (0,4)
-                b0(i,:) = bstart + [-1+2*rand(1) -1+2*rand(1) -1+2*rand(1)]; % randomize search starting point, slope, beta, alpha
-            end
-        end
-        
-
         % Two versions of function:
         %       fit_ambgiNrisk_model: unconstrained
         %       fit_ambigNrisk_model_Constrained: constrained on alpha and beta
@@ -234,7 +231,8 @@ for subj_idx = 1:length(subjects)
                 fixed_prob  * ones(length(Data.vals), 1)',Data.probs',Data.ambigs',info.b,model);            
         end
             
-        
+        sv = zeros(length(Data.choice),1);
+        svRef = 0;
         
         % calculate subject values by unconstrained fit
         if strcmp(fitbywhat,'value') && strcmp(domain, 'MON') ==1 
@@ -485,16 +483,12 @@ for subj_idx = 1:length(subjects)
     end
     
     % save data struct for the two domains
-    if strcmp(domain, 'MON') ==1
-        Datamon = Data;
-        clear Data
-        save(fullfile(fitpar_out_path, ['MDM_' domain '_' num2str(subjectNum) '_fitpar.mat']), 'Datamon')
-    else
-        Datamed = Data;
-        clear Data
-        save(fullfile(fitpar_out_path, ['MDM_' domain '_' num2str(subjectNum) '_fitpar.mat']), 'Datamed')
-    end
+    % load/save does not work in parfor, instead, using a function
+    save_mat(Data, subjectNum, domain, fitbywhat, fitpar_out_path)
 
   end
 end
 
+toc
+
+% delete(poolobj);
