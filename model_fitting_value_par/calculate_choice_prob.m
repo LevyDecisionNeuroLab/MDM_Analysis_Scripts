@@ -9,9 +9,11 @@ data_path = fullfile(root, 'PTB Behavior Log/'); % root of folders is sufficient
 % rating_filename = fullfile(root, 'Behavior Analysis/MDM_Rating.csv');
 out_path = fullfile(root, 'Behavior Analysis');
 
-choiceFile_mon = fullfile(out_path, 'choice_data_mon_11082019.csv');
-choiceFile_med = fullfile(out_path, 'choice_data_med_11082019.csv');
-cpbylevelFile = fullfile(out_path, 'nonpar_11082019.csv');
+choiceFile_mon = fullfile(out_path, 'choice_data_mon_11122019.csv');
+choiceFile_med = fullfile(out_path, 'choice_data_med_11122019.csv');
+countFile_mon = fullfile(out_path, 'choice_count_data_mon_11122019.csv');
+countFile_med = fullfile(out_path, 'chocie_count_data_med_11122019.csv');
+cpbylevelFile = fullfile(out_path, 'nonpar_11122019.csv');
 
 % cp_title = ['id','is_med', 'r25', 'r50','r75','rAll','a24', 'a50','a74','aAll','a24_r50', 'a50_r50','a74_r50','a_r50 All','All','error'];
 % dlmwrite(cpbylevelFile, cp_title, 'coffset', 1, '-append', 'delimiter', ',');    
@@ -22,6 +24,7 @@ addpath(genpath(data_path)); % generate path for all the subject data folder
 subjects = getSubjectsInDir(data_path, 'subj');
 exclude = [2581]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
 subjects = subjects(~ismember(subjects, exclude));
+% subjects = [2585];
 
 % all values
 vals_mon = [5,8,12,25];
@@ -86,7 +89,7 @@ for subj_idx = 1:length(subjects)
     choiceMatrix = create_choice_matrix(values,ambigs,probs,choice);
     
     
-    %% print choice prob by lottery type
+    %% print choice prob and count by lottery type
     
     % choice probability
     riskyChoices = choiceMatrix.riskProb;
@@ -97,16 +100,26 @@ for subj_idx = 1:length(subjects)
     
     
     choices_all = [riskyChoices; ambigChoices];
+    counts_all = [riskyChoicesC; ambigChoicesC];
     
     if strcmp(domain, 'MON')
         all_data_subject = [vals_mon; choices_all];
         dlmwrite(choiceFile_mon, subjectNum , '-append', 'roffset', 1, 'delimiter', ',');  
         dlmwrite(choiceFile_mon, all_data_subject, 'coffset', 1, '-append', 'delimiter', ',');
+        all_data_subjectC = [vals_mon; counts_all];
+        dlmwrite(countFile_mon, subjectNum , '-append', 'roffset', 1, 'delimiter', ',');  
+        dlmwrite(countFile_mon, all_data_subjectC, 'coffset', 1, '-append', 'delimiter', ',');
+
     elseif strcmp(domain, 'MED')
         all_data_subject = [vals_med; choices_all];
         dlmwrite(choiceFile_med, subjectNum , '-append', 'roffset', 1, 'delimiter', ',');  
         dlmwrite(choiceFile_med, all_data_subject, 'coffset', 1, '-append', 'delimiter', ',');
+        all_data_subjectC = [vals_med; counts_all];
+        dlmwrite(countFile_med, subjectNum , '-append', 'roffset', 1, 'delimiter', ',');  
+        dlmwrite(countFile_med, all_data_subjectC, 'coffset', 1, '-append', 'delimiter', ',');
+        
     end    
+     
         
     %% print choice prob by uncertainty level
     
