@@ -7,29 +7,30 @@
 clearvars
 close all
 
-% poolobj = parpool('local', 10);
+poolobj = parpool('local', 9);
 
 %% Define conditions
-fitparwave = 'Behavior data fitpar_08220219'; % folder to save all the fitpar data structures
+fitparwave = 'Behavior data fitpar_06242021'; % folder to save all the fitpar data structures
 fitbywhat = 'value'; % what to use as values 'value', 'rating', 'arbitrary'(0,1,2,3,4)
 model = 'ambigNrisk'; % which utility function
 includeAmbig = true;
 search = 'grid';
+optimizer = 'bads'; % 'fminunc' or 'bads'
 
 %% fitting grid search
-grid_step = 0.2;
+grid_step = 0.5;
 
 if strcmp(search, 'grid')
     % grid search
     % range of each parameter
     if strcmp(model,'ambigNrisk')
-        slopeRange = -4:grid_step:1;
+        slopeRange = -4:grid_step:-0.01;
         bRange = -2:grid_step:2;
-        aRange = 0:grid_step:4;
+        aRange = 0.01:grid_step:4;
     else
         slopeRange = -4:grid_step:1;
         bRange = -2:grid_step:2;
-        aRange = -2:grid_step:2;
+        aRange = 0.01:grid_step:4;
     end
     % three dimenstions
     [b1, b2, b3] = ndgrid(slopeRange, bRange, aRange);
@@ -53,9 +54,9 @@ end
 
 
 %% Set up loading & subject selection
-root = 'D:\Ruonan\Projects in the lab\MDM Project\Medical Decision Making Imaging\MDM_imaging\Behavioral Analysis';
+root = 'E:\Ruonan\Projects in the lab\MDM Project\Medical Decision Making Imaging\MDM_imaging\Behavioral Analysis';
 data_path = fullfile(root, 'PTB Behavior Log/'); % root of folders is sufficient
-rating_filename = fullfile(root, 'Behavior Analysis/MDM_Rating.csv');
+rating_filename = fullfile(root, 'Behavior Analysis/MDM_Rating_for_fitting.csv');
 fitpar_out_path = fullfile(root, 'Behavior fitpar files',fitparwave);
 
 % if folder does not exist, create folder
@@ -67,7 +68,8 @@ addpath(genpath(data_path)); % generate path for all the subject data folder
 
 % get all subjects number in the folder
 subjects = getSubjectsInDir(data_path, 'subj');
-exclude = [2581]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
+% exclude = [2581]; % TEMPORARY: subjects incomplete data (that the script is not ready for)
+exclude = [2581 2663 2664 2665 2666];
 subjects = subjects(~ismember(subjects, exclude));
 % subjects = [2654 2655 2656 2657 2658 2659 2660 2661 2662 2663 2664 2665 2666];
 % subjects = [2663 2664 2665 2666];
@@ -203,7 +205,8 @@ parfor subj_idx = 1:length(subjects)
             ambigs', ...
             model, ...
             b0, ...
-            base);
+            base,...
+            optimizer);
 
         slope = info.b(1);
         a = info.b(3);
