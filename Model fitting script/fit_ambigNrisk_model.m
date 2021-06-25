@@ -20,6 +20,8 @@
 %                    
 %                   Multiple models can be fit by passing in a cell array
 %                   of strings. 
+%     optimizer   - matlab function to find optimized parameters. 
+%                   'fminunc', or 'bads'
 %     
 %
 %     OUTPUTS
@@ -56,12 +58,12 @@
 %     ifat  12.01.06 adapted for ambiguity and risk + CI
 %     ruonan 12.04.17 change single point search to grid search
 
-function [info,p] = fit_ambigNrisk_model(choice,vF,vA,pF,pA,AL,model,b0,base)
+function [info,p] = fit_ambigNrisk_model(choice,vF,vA,pF,pA,AL,model,b0,base,optimizer)
 
 % If multiple model fits requested, loop and pack 
 if iscell(model)
    for i = 1:length(model)
-      [info(i),p{i}] = fit_ambigNrisk_model(choice,vF,vA,pF,pA,AL,model{i},b0,base);
+      [info(i),p{i}] = fit_ambigNrisk_model(choice,vF,vA,pF,pA,AL,model{i},b0,base,optimizer);
    end
    return;
 end
@@ -69,106 +71,189 @@ end
 thresh = 0.05;
 nobs = length(choice);
 
-% try multiple starting positions
-for i = 1 : size(b0,1)
-    b00 = b0(i,:)'; % search starting point
-    % Fit model, attempting to use FMINUNC first, then falling back to FMINSEARCH
-    if exist('fminunc','file')
-       try
-          optimizer = 'fminunc';
-          OPTIONS = optimset('Display','off','LargeScale','off');
-              [b,negLL,exitflag,convg,g,H] = fminunc(@local_negLL,b00,OPTIONS,choice,vF,vA,pF,pA,AL,model,base);
+%% Fit model, attempting to use FMINUNC first, then falling back to FMINSEARCH
+if strcmp(optimizer, 'fminunc')
+    
+    % try multiple starting positions
+    for i = 1 : size(b0,1)
+        b00 = b0(i,:)'; % search starting point
+        
+        if exist('fminunc','file')
+           try
+              optimizer = 'fminunc';
+              OPTIONS = optimset('Display','off','LargeScale','off');
+                  [b,negLL,exitflag,convg,g,H] = fminunc(@local_negLL_fminunc,b00,OPTIONS,choice,vF,vA,pF,pA,AL,model,base);
 
-          if exitflag ~= 1 % trap occasional linesearch failures
-             optimizer = 'fminsearch';
-             fprintf('FMINUNC failed to converge, switching to FMINSEARCH\n');
-          end         
-       catch
-          optimizer = 'fminsearch';
-          fprintf('Problem using FMINUNC, switching to FMINSEARCH\n');
-       end
-    else
-       optimizer = 'fminsearch';
-    end
-
-    if strcmp(optimizer,'fminsearch')
-       optimizer = 'fminsearch';
-       OPTIONS = optimset('Display','off','TolCon',1e-6,'TolFun',1e-5,'TolX',1e-5,...
-          'DiffMinChange',1e-4,'Maxiter',100000,'MaxFunEvals',20000);
-       [b,negLL,exitflag,convg] = fminsearch(@local_negLL,b00,OPTIONS,choice,vF,vA,pF,pA,AL,model,base);
-    end
-
-    if exitflag ~= 1
-       fprintf('Optimization FAILED, #iterations = %g\n',convg.iterations);
-    else
-       fprintf('Optimization CONVERGED, #iterations = %g\n',convg.iterations);
-    end
-
-    % Unrestricted log-likelihood
-    LL = -negLL;
-    if i == 1
-        info.LL = LL;
-    end
-
-    if i == 1 || (i ~=1 && LL > info.LL)% first iteration; and if a later iteration renders larger likelihood, replace info
-        % Choice probabilities (for VARIED)
-        p = choice_prob_ambigNrisk(base,vF,vA,pF,pA,AL,b,model);
-
-        % Restricted log-likelihood
-        LL0 = sum((choice==1).*log(0.5) + (1 - (choice==1)).*log(0.5)); % assuming no predictors, the chance of choosing and not choosing the lottery are both 50%
-
-        % Confidence interval, requires Hessian from FMINUNC
-        try
-            invH = inv(-H);
-            se = sqrt(diag(-invH));
-        catch
+              if exitflag ~= 1 % trap occasional linesearch failures
+                 optimizer = 'fminsearch';
+                 fprintf('FMINUNC failed to converge, switching to FMINSEARCH\n');
+              end         
+           catch
+              optimizer = 'fminsearch';
+              fprintf('Problem using FMINUNC, switching to FMINSEARCH\n');
+           end
+        else
+           optimizer = 'fminsearch';
         end
 
-        info.nobs = nobs;
-        info.nb = length(b);
-        info.model = model;
-        info.optimizer = optimizer;
-        info.exitflag = exitflag;
-        info.b = b;
-
-        try
-            info.se = se;
-            info.ci = [b-se*norminv(1-thresh/2) b+se*norminv(1-thresh/2)]; % Wald confidence
-            info.tstat = b./se;
-        catch
+        if strcmp(optimizer,'fminsearch')
+           optimizer = 'fminsearch';
+           OPTIONS = optimset('Display','off','TolCon',1e-6,'TolFun',1e-5,'TolX',1e-5,...
+              'DiffMinChange',1e-4,'Maxiter',100000,'MaxFunEvals',20000);
+           [b,negLL,exitflag,convg] = fminsearch(@local_negLL_fminunc,b00,OPTIONS,choice,vF,vA,pF,pA,AL,model,base);
         end
 
-        info.LL = LL;
-        info.LL0 = LL0;
-        info.AIC = -2*LL + 2*length(b);
-        info.BIC = -2*LL + length(b)*log(nobs);
-        info.r2 = 1 - LL/LL0; % McFadden's Pseudo r squared = 1-LLmodel/LLwithoutModel
-        info.r2_adj = 1 - ((LL-length(b))/LL0);
-    end    
+        if exitflag ~= 1
+           fprintf('Optimization FAILED, #iterations = %g\n',convg.iterations);
+        else
+           fprintf('Optimization CONVERGED, #iterations = %g\n',convg.iterations);
+        end
+        
+        % Unrestricted log-likelihood
+        LL = -negLL;
+        if i == 1
+            info.LL = LL;
+        end
+
+        if i == 1 || (i ~=1 && LL > info.LL)% first iteration; and if a later iteration renders larger likelihood, replace info
+            % Choice probabilities (for VARIED)
+            p = choice_prob_ambigNrisk(base,vF,vA,pF,pA,AL,b,model);
+
+            % Restricted log-likelihood
+            LL0 = sum((choice==1).*log(0.5) + (1 - (choice==1)).*log(0.5)); % assuming no predictors, the chance of choosing and not choosing the lottery are both 50%
+
+            % Confidence interval, requires Hessian from FMINUNC
+            try
+                invH = inv(-H);
+                se = sqrt(diag(-invH));
+            catch
+            end
+
+            info.nobs = nobs;
+            info.nb = length(b);
+            info.model = model;
+            info.optimizer = optimizer;
+            info.exitflag = exitflag;
+            info.b = b;
+
+            try
+                info.se = se;
+                info.ci = [b-se*norminv(1-thresh/2) b+se*norminv(1-thresh/2)]; % Wald confidence
+                info.tstat = b./se;
+            catch
+            end
+
+            info.LL = LL;
+            info.LL0 = LL0;
+            info.AIC = -2*LL + 2*length(b);
+            info.BIC = -2*LL + length(b)*log(nobs);
+            info.r2 = 1 - LL/LL0; % McFadden's Pseudo r squared = 1-LLmodel/LLwithoutModel
+            info.r2_adj = 1 - ((LL-length(b))/LL0);
+        end       
+    end
+    
+elseif strcmp(optimizer, 'bads')
+    %% use bads instead of fminunc
+    lb = [-100 -10 0]; % lower bound for slope, beta, and alpha
+    ub = [0 10 10]; % upper bound for slope, beta, and alpha
+    
+    % try multiple starting positions
+    for i = 1 : size(b0,1)
+        b00 = b0(i,:); % search starting point, row vector
+        
+        options = [];
+
+        [b, negLL, exitflag, output_struct] = bads(@local_negLL_bads,b00,lb,ub,[],[],[],options,choice,vF,vA,pF,pA,AL,model,base);
+        
+        % Unrestricted log-likelihood
+        LL = -negLL;
+        if i == 1
+            info.LL = LL;
+        end
+
+        if i == 1 || (i ~=1 && LL > info.LL)% first iteration; and if a later iteration renders larger likelihood, replace info
+            % Choice probabilities (for VARIED)
+            p = choice_prob_ambigNrisk(base,vF,vA,pF,pA,AL,b',model);
+
+            % Restricted log-likelihood
+            LL0 = sum((choice==1).*log(0.5) + (1 - (choice==1)).*log(0.5)); % assuming no predictors, the chance of choosing and not choosing the lottery are both 50%
+
+            % Confidence interval, requires Hessian from FMINUNC
+            try
+                invH = inv(-H);
+                se = sqrt(diag(-invH));
+            catch
+            end
+
+            info.nobs = nobs;
+            info.nb = length(b);
+            info.model = model;
+            info.optimizer = optimizer;
+            info.exitflag = exitflag;
+            info.b = b;
+            info.output_struct = output_struct;
+
+            try
+                info.se = se;
+                info.ci = [b-se*norminv(1-thresh/2) b+se*norminv(1-thresh/2)]; % Wald confidence
+                info.tstat = b./se;
+            catch
+            end
+
+            info.LL = LL;
+            info.LL0 = LL0;
+            info.AIC = -2*LL + 2*length(b);
+            info.BIC = -2*LL + length(b)*log(nobs);
+            % https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-what-are-pseudo-r-squareds/
+            info.r2 = 1 - LL/LL0; % McFadden's Pseudo r squared = 1-LLmodel/LLwithoutModel (LL is negative)
+            info.r2_adj = 1-((LL - length(b))/LL0); % adjusted r2 
+        end            
+    end
+    
 end
 
 
 %----- LOCAL FUNCTIONS
 % This is the function to minimize, sum of -log-likelihood.
-function sumerr = local_negLL(beta,choice,vF,vA,pF,pA,AL,model,base)
-% estimated likelihood of chooseing the lottery
-p = choice_prob_ambigNrisk(base,vF,vA,pF,pA,AL,beta,model); 
+% there are two functions, because of row/column vector 
+%% for fminunc
+function sumerr = local_negLL_fminunc(beta,choice,vF,vA,pF,pA,AL,model,base)
+    % estimated likelihood of chooseing the lottery
+    p = choice_prob_ambigNrisk(base,vF,vA,pF,pA,AL,beta,model); 
 
-% Trap log(0)
-ind = p == 1;
-p(ind) = 0.9999;
-ind = p == 0;
-p(ind) = 0.0001;
+    % Trap log(0)
+    ind = p == 1;
+    p(ind) = 0.9999;
+    ind = p == 0;
+    p(ind) = 0.0001;
 
-% Log-likelihood
-% If lottery is chosen, err=log(p), log likelihood of choosing the lottery
-% If reference is chosen, err=log(1-p), log likelihood of choosing the reference
-% Because 0<p<1, log(p) and log(1-p) < 0. sum of these likelihoods is negative 
-% The sum of these likelihood should be maximized
-err = (choice==1).*log(p) + (1 - (choice==1)).*log(1-p);
+    % Log-likelihood
+    % If lottery is chosen, err=log(p), log likelihood of choosing the lottery
+    % If reference is chosen, err=log(1-p), log likelihood of choosing the reference
+    % Because 0<p<1, log(p) and log(1-p) < 0. sum of these likelihoods is negative 
+    % The sum of these likelihood should be maximized
+    err = (choice==1).*log(p) + (1 - (choice==1)).*log(1-p);
 
-% Sum of -log-likelihood. sumerr is a positive value, should me minimized
-sumerr = -sum(err);
+    % Sum of -log-likelihood. sumerr is a positive value, should me minimized
+    sumerr = -sum(err);
 
+%% for bads
+function sumerr = local_negLL_bads(beta,choice,vF,vA,pF,pA,AL,model,base)
+    % estimated likelihood of chooseing the lottery
+    p = choice_prob_ambigNrisk(base,vF,vA,pF,pA,AL,beta',model); 
 
+    % Trap log(0)
+    ind = p == 1;
+    p(ind) = 0.9999;
+    ind = p == 0;
+    p(ind) = 0.0001;
 
+    % Log-likelihood
+    % If lottery is chosen, err=log(p), log likelihood of choosing the lottery
+    % If reference is chosen, err=log(1-p), log likelihood of choosing the reference
+    % Because 0<p<1, log(p) and log(1-p) < 0. sum of these likelihoods is negative 
+    % The sum of these likelihood should be maximized
+    err = (choice==1).*log(p) + (1 - (choice==1)).*log(1-p);
+
+    % Sum of -log-likelihood. sumerr is a positive value, should me minimized
+    sumerr = -sum(err);
